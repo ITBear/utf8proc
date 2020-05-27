@@ -10,6 +10,7 @@
 *.dSYM
 *.out
 *.new
+*.user
 .vscode
 /data/*.txt
 /data/*.ttf
