@@ -4,27 +4,40 @@
 
 namespace GPlatform {
 
+GP_ENUM(UTF8PROC_API, UTF8NFType,
+    NFD,
+    NFC,
+    NFKD,
+    NFKC
+);
+
 class UTF8PROC_API UTF8Proc
 {
-	CLASS_REMOVE_CTRS(UTF8Proc);
+    CLASS_REMOVE_CTRS(UTF8Proc)
 
 public:
-	static void					S_NFD		(std::string_view aStr, GpMemoryStorage& aStrOut);
-	static void					S_NFC		(std::string_view aStr, GpMemoryStorage& aStrOut);
-	static void					S_NFKD		(std::string_view aStr, GpMemoryStorage& aStrOut);
-	static void					S_NFKC		(std::string_view aStr, GpMemoryStorage& aStrOut);
+    /**
+     * @brief S_MaxSizeW32
+     * @param aType
+     * @param aStr
+     * @return Count of utf32 chars
+     */
+    static count_t              S_MaxCountUTF32 (const UTF8NFType::EnumT    aType,
+                                                 std::string_view           aStr);
 
-	static GpMemoryStorage::SP	S_NFD		(const GpMemoryStorage& aStr);
-	static GpMemoryStorage::SP	S_NFC		(const GpMemoryStorage& aStr);
-	static GpMemoryStorage::SP	S_NFKD		(const GpMemoryStorage& aStr);
-	static GpMemoryStorage::SP	S_NFKC		(const GpMemoryStorage& aStr);
+    /**
+     * @brief S_Process
+     * @param aType
+     * @param aStrIn
+     * @param aStrOut - utf8 string but aligned as utf32
+     * @return Actual size in bytes
+     */
+    static size_byte_t          S_Process       (const UTF8NFType::EnumT    aType,
+                                                 std::string_view           aStrIn,
+                                                 GpRawPtrSI32_RW            aStrOut);
 
 private:
-	static void					S_MapCustom	(std::string_view	aStr,
-											 u_int_32			aOptions,
-											 GpMemoryStorage&	aStringOut);
-	static GpMemoryStorage::SP	S_N			(const GpMemoryStorage& aStr,
-											 const size_t			aFlags);
+    static size_t               STypeToFlags    (const UTF8NFType::EnumT aType) noexcept;
 };
 
 }//GPlatform

@@ -531,14 +531,14 @@ typedef utf8proc_int32_t (*utf8proc_custom_func)(utf8proc_int32_t codepoint, voi
  *          is safe to reset the state to zero after a grapheme break.
  */
  utf8proc_bool utf8proc_grapheme_break_stateful(
-	utf8proc_int32_t codepoint1, utf8proc_int32_t codepoint2, utf8proc_int32_t *state);
+    utf8proc_int32_t codepoint1, utf8proc_int32_t codepoint2, utf8proc_int32_t *state);
 
 /**
  * Same as @ref utf8proc_grapheme_break_stateful, except without support for the
  * Unicode 9 additions to the algorithm. Supported for legacy reasons.
  */
  utf8proc_bool utf8proc_grapheme_break(
-	utf8proc_int32_t codepoint1, utf8proc_int32_t codepoint2);
+    utf8proc_int32_t codepoint1, utf8proc_int32_t codepoint2);
 
 
 /**
