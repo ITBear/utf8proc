@@ -4,109 +4,66 @@
 
 namespace GPlatform {
 
-void	UTF8Proc::S_NFD (std::string_view aStr, GpMemoryStorage& aStrOut)
+GP_ENUM_IMPL(UTF8NFType)
+
+count_t UTF8Proc::S_MaxCountUTF32 (const UTF8NFType::EnumT  aType,
+                                   std::string_view         aStr)
 {
-	S_MapCustom(aStr,
-				utf8proc_option_t(UTF8PROC_STABLE | UTF8PROC_DECOMPOSE),
-				aStrOut);
+    THROW_GPE_COND_CHECK_M(!aStr.empty(), "String is empty"_sv);
+
+    const utf8proc_ssize_t maxCount = utf8proc_decompose_custom(reinterpret_cast<const utf8proc_uint8_t*>(aStr.data()),
+                                                                NumOps::SConvert<utf8proc_ssize_t>(aStr.size()),
+                                                                nullptr,
+                                                                0,
+                                                                utf8proc_option_t(STypeToFlags(aType)),
+                                                                nullptr,
+                                                                nullptr);
+
+    THROW_GPE_COND_CHECK_M(maxCount > 0, "utf8proc_decompose_custom return error"_sv);
+
+    return count_t::SMake(maxCount) + 1_cnt;
 }
 
-void	UTF8Proc::S_NFC (std::string_view aStr, GpMemoryStorage& aStrOut)
+size_byte_t UTF8Proc::S_Process (const UTF8NFType::EnumT    aType,
+                                 std::string_view           aStrIn,
+                                 GpRawPtrSI32_RW            aStrOut)
 {
-	S_MapCustom(aStr,
-				utf8proc_option_t(UTF8PROC_STABLE | UTF8PROC_COMPOSE),
-				aStrOut);
+    const count_t maxCountUTF32 = S_MaxCountUTF32(aType, aStrIn);
+
+    THROW_GPE_COND_CHECK_M(aStrOut.CountLeft() >= maxCountUTF32, "String_out are too small"_sv);
+
+    const utf8proc_option_t options = utf8proc_option_t(STypeToFlags(aType));
+
+    const utf8proc_ssize_t countUTF32 = utf8proc_decompose_custom(reinterpret_cast<const utf8proc_uint8_t*>(aStrIn.data()),
+                                                                  NumOps::SConvert<utf8proc_ssize_t>(aStrIn.size()),
+                                                                  aStrOut.Ptr(),
+                                                                  maxCountUTF32.ValueAs<utf8proc_ssize_t>(),
+                                                                  options,
+                                                                  nullptr,
+                                                                  nullptr);
+
+    THROW_GPE_COND_CHECK_M(countUTF32 > 0, "utf8proc_decompose_custom return error"_sv);
+
+    const utf8proc_ssize_t actualCountUTF8 = utf8proc_reencode(aStrOut.Ptr(),
+                                                               countUTF32,
+                                                               options);
+
+    THROW_GPE_COND_CHECK_M(actualCountUTF8 > 0, "utf8proc_reencode return error"_sv);
+
+    return size_byte_t::SMake(actualCountUTF8);
 }
 
-void	UTF8Proc::S_NFKD (std::string_view aStr, GpMemoryStorage& aStrOut)
+size_t  UTF8Proc::STypeToFlags (const UTF8NFType::EnumT aType) noexcept
 {
-	S_MapCustom(aStr,
-				utf8proc_option_t(UTF8PROC_STABLE | UTF8PROC_DECOMPOSE | UTF8PROC_COMPAT),
-				aStrOut);
-}
+    static const GpArray<utf8proc_option_t, UTF8NFType::SCount().ValueAs<size_t>()> sFlags =
+    {
+        utf8proc_option_t(UTF8PROC_STABLE | UTF8PROC_DECOMPOSE),//NFD
+        utf8proc_option_t(UTF8PROC_STABLE | UTF8PROC_COMPOSE),//NFC
+        utf8proc_option_t(UTF8PROC_STABLE | UTF8PROC_DECOMPOSE | UTF8PROC_COMPAT),//NFKD
+        utf8proc_option_t(UTF8PROC_STABLE | UTF8PROC_COMPOSE | UTF8PROC_COMPAT)//NFKC
+    };
 
-void	UTF8Proc::S_NFKC (std::string_view aStr, GpMemoryStorage& aStrOut)
-{
-	S_MapCustom(aStr,
-				utf8proc_option_t(UTF8PROC_STABLE | UTF8PROC_COMPOSE | UTF8PROC_COMPAT),
-				aStrOut);
-}
-
-GpMemoryStorage::SP	UTF8Proc::S_NFD (const GpMemoryStorage& aStr)
-{
-	return S_N(aStr, (UTF8PROC_STABLE | UTF8PROC_DECOMPOSE));
-}
-
-GpMemoryStorage::SP	UTF8Proc::S_NFC (const GpMemoryStorage& aStr)
-{
-	return S_N(aStr, (UTF8PROC_STABLE | UTF8PROC_COMPOSE));
-}
-
-GpMemoryStorage::SP	UTF8Proc::S_NFKD (const GpMemoryStorage& aStr)
-{
-	return S_N(aStr, (UTF8PROC_STABLE | UTF8PROC_DECOMPOSE | UTF8PROC_COMPAT));
-}
-
-GpMemoryStorage::SP	UTF8Proc::S_NFKC (const GpMemoryStorage& aStr)
-{
-	return S_N(aStr, (UTF8PROC_STABLE | UTF8PROC_COMPOSE | UTF8PROC_COMPAT));
-}
-
-void	UTF8Proc::S_MapCustom(std::string_view	aStr,
-							  u_int_32			aOptions,
-							  GpMemoryStorage&	aStringOut)
-{
-	THROW_GPE_COND_CHECK_M(!aStr.empty(), "aStr is empty"_sv);
-
-	ssize_t newSize = utf8proc_decompose_custom(reinterpret_cast<const utf8proc_uint8_t*>(aStr.data()),
-												NumOps::SConvert<utf8proc_ssize_t>(aStr.size()),
-												nullptr,
-												0,
-												utf8proc_option_t(aOptions),
-												nullptr,
-												nullptr);
-
-	THROW_GPE_COND_CHECK_M(newSize > 0, "utf8proc_decompose_custom return error"_sv);
-
-	const count_t actualSize = count_t::SMake((newSize + 1) * sizeof(utf8proc_int32_t));
-
-	aStringOut.Resize(actualSize);
-
-	{
-		GpMemoryStorageViewRW::SP	stringOutViewSP	= aStringOut.ViewReadWrite();
-		GpMemoryStorageViewRW&		stringOutView	= stringOutViewSP.Vn();
-
-		newSize = utf8proc_decompose_custom(reinterpret_cast<const utf8proc_uint8_t*>(aStr.data()),
-											NumOps::SConvert<utf8proc_ssize_t>(aStr.size()),
-											reinterpret_cast<utf8proc_int32_t*>(stringOutView.Data()),
-											newSize * sizeof(utf8proc_int32_t) + 1,
-											utf8proc_option_t(aOptions),
-											nullptr,
-											nullptr);
-
-		THROW_GPE_COND_CHECK_M(newSize > 0, "utf8proc_decompose_custom return error"_sv);
-
-		newSize = utf8proc_reencode(reinterpret_cast<utf8proc_int32_t*>(stringOutView.Data()),
-									reinterpret_cast<utf8proc_ssize_t>(newSize),
-									utf8proc_option_t(aOptions));
-
-		THROW_GPE_COND_CHECK_M(newSize > 0, "utf8proc_reencode return error"_sv);
-	}
-
-	aStringOut.Resize(count_t::SMake(newSize));
-}
-
-GpMemoryStorage::SP	UTF8Proc::S_N (const GpMemoryStorage&	aStr,
-								   const size_t				aFlags)
-{
-	GpMemoryStorage::SP		res		= aStr.New();
-	auto					strView	= aStr.ViewRead();
-
-	S_MapCustom(strView.VC().AsStringView(),
-				utf8proc_option_t(aFlags),
-				res.Vn());
-
-	return res;
+    return sFlags.at(aType);
 }
 
 }//namespace GPlatform

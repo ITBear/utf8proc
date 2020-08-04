@@ -42,6 +42,7 @@
 
 
 #include "utf8proc_impl.hpp"
+#include <string>
 
 #ifndef SSIZE_MAX
 #define SSIZE_MAX ((size_t)SIZE_MAX/2)
@@ -132,7 +133,7 @@ const utf8proc_int8_t utf8proc_utf8class[256] = {
   end = str + ((strlen < 0) ? 4 : strlen);
   uc = *str++;
   if (uc < 0x80) {
-    *dst = uc;
+    *dst = utf8proc_int32_t(uc);
     return 1;
   }
   // Must be between 0xc2 and 0xf4 inclusive to be valid
@@ -140,7 +141,7 @@ const utf8proc_int8_t utf8proc_utf8class[256] = {
   if (uc < 0xe0) {         // 2-byte sequence
      // Must have valid continuation character
      if (str >= end || !utf_cont(*str)) return UTF8PROC_ERROR_INVALIDUTF8;
-     *dst = ((uc & 0x1f)<<6) | (*str & 0x3f);
+     *dst = utf8proc_int32_t((uc & 0x1f)<<6) | utf8proc_int32_t(*str & 0x3f);
      return 2;
   }
   if (uc < 0xf0) {        // 3-byte sequence
@@ -148,11 +149,18 @@ const utf8proc_int8_t utf8proc_utf8class[256] = {
         return UTF8PROC_ERROR_INVALIDUTF8;
      // Check for surrogate chars
      if (uc == 0xed && *str > 0x9f)
+     {
          return UTF8PROC_ERROR_INVALIDUTF8;
-     uc = ((uc & 0xf)<<12) | ((*str & 0x3f)<<6) | (str[1] & 0x3f);
+     }
+
+     uc = utf8proc_uint32_t((uc & 0xf) << 12) | utf8proc_uint32_t((*str & 0x3f)<<6) | utf8proc_uint32_t(str[1] & 0x3f);
+
      if (uc < 0x800)
+     {
          return UTF8PROC_ERROR_INVALIDUTF8;
-     *dst = uc;
+     }
+
+     *dst = utf8proc_int32_t(uc);
      return 3;
   }
   // 4-byte sequence
@@ -160,12 +168,21 @@ const utf8proc_int8_t utf8proc_utf8class[256] = {
   if ((str + 2 >= end) || !utf_cont(*str) || !utf_cont(str[1]) || !utf_cont(str[2]))
      return UTF8PROC_ERROR_INVALIDUTF8;
   // Make sure in correct range (0x10000 - 0x10ffff)
-  if (uc == 0xf0) {
-    if (*str < 0x90) return UTF8PROC_ERROR_INVALIDUTF8;
-  } else if (uc == 0xf4) {
-    if (*str > 0x8f) return UTF8PROC_ERROR_INVALIDUTF8;
+  if (uc == 0xf0)
+  {
+      if (*str < 0x90)
+      {
+          return UTF8PROC_ERROR_INVALIDUTF8;
+      }
+  } else if (uc == 0xf4)
+  {
+      if (*str > 0x8f)
+      {
+          return UTF8PROC_ERROR_INVALIDUTF8;
+      }
   }
-  *dst = ((uc & 7)<<18) | ((*str & 0x3f)<<12) | ((str[1] & 0x3f)<<6) | (str[2] & 0x3f);
+
+  *dst = utf8proc_int32_t((uc & 7)<<18) | utf8proc_int32_t((*str & 0x3f)<<12) | utf8proc_int32_t((str[1] & 0x3f)<<6) | utf8proc_int32_t(str[2] & 0x3f);
   return 4;
 }
 
@@ -367,20 +384,20 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
 
  utf8proc_int32_t utf8proc_tolower(utf8proc_int32_t c)
 {
-  utf8proc_int32_t cl = utf8proc_get_property(c)->lowercase_seqindex;
-  return cl != UINT16_MAX ? seqindex_decode_index(cl) : c;
+  utf8proc_uint32_t cl = utf8proc_get_property(c)->lowercase_seqindex;
+  return cl != UINT16_MAX ? seqindex_decode_index(cl) : (c);
 }
 
  utf8proc_int32_t utf8proc_toupper(utf8proc_int32_t c)
 {
-  utf8proc_int32_t cu = utf8proc_get_property(c)->uppercase_seqindex;
-  return cu != UINT16_MAX ? seqindex_decode_index(cu) : c;
+  utf8proc_uint32_t cu = utf8proc_get_property(c)->uppercase_seqindex;
+  return cu != UINT16_MAX ? seqindex_decode_index(cu) : (c);
 }
 
  utf8proc_int32_t utf8proc_totitle(utf8proc_int32_t c)
 {
-  utf8proc_int32_t cu = utf8proc_get_property(c)->titlecase_seqindex;
-  return cu != UINT16_MAX ? seqindex_decode_index(cu) : c;
+  utf8proc_uint32_t cu = utf8proc_get_property(c)->titlecase_seqindex;
+  return cu != UINT16_MAX ? seqindex_decode_index(cu) : (c);
 }
 
 /* return a character width analogous to wcwidth (except portable and
@@ -494,7 +511,7 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
   const utf8proc_uint8_t *str, utf8proc_ssize_t strlen,
   utf8proc_int32_t *buffer, utf8proc_ssize_t bufsize, utf8proc_option_t options
 ) {
-	return utf8proc_decompose_custom(str, strlen, buffer, bufsize, options, nullptr, nullptr);
+    return utf8proc_decompose_custom(str, strlen, buffer, bufsize, options, nullptr, nullptr);
 }
 
  utf8proc_ssize_t utf8proc_decompose_custom(
@@ -516,7 +533,7 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
     int boundclass = UTF8PROC_BOUNDCLASS_START;
     while (1) {
       if (options & UTF8PROC_NULLTERM) {
-		rpos += utf8proc_iterate(str + rpos, -1, &uc);
+        rpos += utf8proc_iterate(str + rpos, -1, &uc);
         /* checking of return value is not necessary,
            as 'uc' is < 0 in case of error */
         if (uc < 0) return UTF8PROC_ERROR_INVALIDUTF8;
@@ -527,7 +544,7 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
         rpos += utf8proc_iterate(str + rpos, strlen - rpos, &uc);
         if (uc < 0) return UTF8PROC_ERROR_INVALIDUTF8;
       }
-	  if (custom_func != nullptr) {
+      if (custom_func != nullptr) {
         uc = custom_func(uc, custom_data);   /* user-specified custom mapping */
       }
       decomp_result = utf8proc_decompose_char(
@@ -598,9 +615,9 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
     length = wpos;
   }
   if (options & UTF8PROC_COMPOSE) {
-	utf8proc_int32_t *starter = nullptr;
+    utf8proc_int32_t *starter = nullptr;
     utf8proc_int32_t current_char;
-	const utf8proc_property_t *starter_property = nullptr, *current_property;
+    const utf8proc_property_t *starter_property = nullptr, *current_property;
     utf8proc_propval_t max_combining_class = -1;
     utf8proc_ssize_t rpos;
     utf8proc_ssize_t wpos = 0;
@@ -620,7 +637,7 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
             *starter = UTF8PROC_HANGUL_SBASE +
               (hangul_lindex * UTF8PROC_HANGUL_VCOUNT + hangul_vindex) *
               UTF8PROC_HANGUL_TCOUNT;
-			starter_property = nullptr;
+            starter_property = nullptr;
             continue;
           }
         }
@@ -631,7 +648,7 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
           hangul_tindex = current_char - UTF8PROC_HANGUL_TBASE;
           if (hangul_tindex >= 0 && hangul_tindex < UTF8PROC_HANGUL_TCOUNT) {
             *starter += hangul_tindex;
-			starter_property = nullptr;
+            starter_property = nullptr;
             continue;
           }
         }
@@ -653,7 +670,7 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
             if (composition > 0 && (!(options & UTF8PROC_STABLE) ||
                 !(unsafe_get_property(composition)->comp_exclusion))) {
               *starter = composition;
-			  starter_property = nullptr;
+              starter_property = nullptr;
               continue;
             }
           }
@@ -666,7 +683,7 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
         }
       } else {
         starter = buffer + wpos;
-		starter_property = nullptr;
+        starter_property = nullptr;
         max_combining_class = -1;
       }
       wpos++;
@@ -711,7 +728,7 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
   *dstptr = nullptr;
   result = utf8proc_decompose_custom(str, strlen, nullptr, 0, options, custom_func, custom_data);
   if (result < 0) return result;
-  buffer = (utf8proc_int32_t *) malloc(result * sizeof(utf8proc_int32_t) + 1);
+  buffer = (utf8proc_int32_t *) std::malloc(utf8proc_size_t(result) * sizeof(utf8proc_int32_t) + 1);
   if (!buffer) return UTF8PROC_ERROR_NOMEM;
   result = utf8proc_decompose_custom(str, strlen, buffer, result, options, custom_func, custom_data);
   if (result < 0)

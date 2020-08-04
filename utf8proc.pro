@@ -3,7 +3,7 @@ QT			-= core gui widgets
 TEMPLATE	= lib
 VER_MAJ		= 0
 VER_MIN		= 1
-VER_PAT		= 0
+VER_PAT		= 1
 CONFIG		+= warn_on
 DEFINES		+= UTF8PROC_LIBRARY \
 			HAVE_NETINET_IN_H \
@@ -13,10 +13,9 @@ PACKET_NAME     = utf8proc
 OUT_BUILD_PATH  = ./../../../Bin_tmp/
 
 compiler_gcc{
-	os_linux{
-		QMAKE_CC	= gcc-9
-		QMAKE_CXX	= g++-9
-	}
+	QMAKE_CC		=	gcc-10
+	QMAKE_CXX		=	g++-10
+	QMAKE_LINK		=	g++-10
 }else:compiler_clang{
 	QMAKE_CXXFLAGS	+= -stdlib=libc++
 	QMAKE_LFLAGS    += -stdlib=libc++
@@ -24,34 +23,22 @@ compiler_gcc{
 	#QMAKE_CXXFLAGS	+= -stdlib=libstdc++
 	#QMAKE_LFLAGS   += -stdlib=libstdc++
 }else:compiler_emscripten{
-
 }else{
 	error(Unknown compiler mode. Set CONFIG+=compiler_gcc OR CONFIG+=compiler_clang OR CONFIG+=compiler_emscripten)
 }
 
-#c++2a
-CONFIG					+=	c++2a
-QMAKE_CXXFLAGS_GNUCXX11 =	-std=gnu++2a
-QMAKE_CXXFLAGS_GNUCXX14 =	-std=gnu++2a
-QMAKE_CXXFLAGS_GNUCXX1Z =	-std=gnu++2a
-QMAKE_CXXFLAGS			+=	-std=gnu++2a
-
-compiler_gcc{
-	QMAKE_CXXFLAGS	+= -fstrict-aliasing -Wall -Wextra -Wno-comment -Wdouble-promotion -Wswitch-default -Wswitch-enum -Wuninitialized -Wstrict-aliasing -Wfloat-equal -Wshadow -Wplacement-new -Wcast-align -Wconversion -Wlogical-op
-	QMAKE_CXXFLAGS	+= -Wduplicated-cond -Wduplicated-branches -Wrestrict -Wnull-dereference -Wno-terminate
-	#QMAKE_CXXFLAGS	+= -fconcepts -fgnu-tm
-	QMAKE_CXXFLAGS  += -fstack-clash-protection
-}else:compiler_clang{
-}else:compiler_emscripten{
-}
+#c++20
+CONFIG			+=	c++2a
+QMAKE_CXXFLAGS	+=	-std=gnu++2a
 
 QMAKE_CXXFLAGS	+= -fvisibility=hidden -fvisibility-inlines-hidden
-QMAKE_CXXFLAGS	+= -ffunction-sections -fdata-sections
+QMAKE_CXXFLAGS	+= -ffunction-sections -fdata-sections -fexceptions -fstrict-aliasing -fstack-clash-protection
+QMAKE_CXXFLAGS	+= -Wall -Wextra -Wdouble-promotion -Wswitch-default -Wswitch-enum -Wuninitialized
+QMAKE_CXXFLAGS	+= -Wstrict-aliasing -Wfloat-equal -Wshadow -Wplacement-new -Wcast-align -Wconversion -Wlogical-op
+QMAKE_CXXFLAGS	+= -Wduplicated-cond -Wduplicated-branches -Wrestrict -Wnull-dereference -Wno-terminate
+QMAKE_CXXFLAGS	+= -Wno-unknown-warning-option -Wno-unused-command-line-argument -Wno-comment
 #QMAKE_CXXFLAGS	+= -fno-rtti
 QMAKE_LFLAGS    += -Wl,--gc-sections
-
-QMAKE_CFLAGS	+= -fstrict-aliasing -Wall -Wextra -Wno-comment -Wdouble-promotion -Wswitch-default -Wswitch-enum -Wuninitialized -Wstrict-aliasing -Wfloat-equal -Wshadow -Wplacement-new -Wcast-align -Wconversion -Wlogical-op
-QMAKE_CFLAGS	+= -fvisibility=hidden -fvisibility-inlines-hidden
 
 #------------------------ DEBUG or RELEASE ---------------------
 debug_build {
@@ -126,16 +113,14 @@ message([$$PACKET_NAME]: Build directory $$DESTDIR)
 message([$$PACKET_NAME]: -------------------------------------------------)
 
 #------------------------------ LIBS BEGIN ---------------------------------
-LIBS += -L$$DESTDIR \
-		-L$$DESTDIR/Plugins
+LIBS += -L$$DESTDIR
+
+os_windows{
+	GP_CORE_LIB_V = 2
+}
 
 os_linux
 {
-	LIBS += -L/usr/lib/gcc/x86_64-linux-gnu/9
-}
-
-os_windows{
-	GP_CORE_LIB_V			= 2
 }
 
 LIBS += -lGpCore$$TARGET_POSTFIX$$GP_CORE_LIB_V
@@ -143,8 +128,8 @@ LIBS += -lGpCore$$TARGET_POSTFIX$$GP_CORE_LIB_V
 #------------------------------ LIBS END ---------------------------------
 
 INCLUDEPATH += \
-	../../Extras \
-	../../Extras/Boost/boost_1_72_0$$BOOST_POSTFIX
+	../Extras \
+	../Extras/Boost/boost_1_72_0$$BOOST_POSTFIX
 
 SOURCES += \
 	utf8proc.cpp \
