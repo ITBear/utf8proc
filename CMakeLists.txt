@@ -38,6 +38,7 @@ target_compile_definitions(${PROJECT_NAME}
 
 string(JOIN " " COMPILE_FLAGS
         -std=gnu++20
+        -O3
 
         -fvisibility=hidden
         -fvisibility-inlines-hidden
@@ -143,12 +144,8 @@ if (NOT EXISTS "${TARGET_EXT_INCLUDE_DIR}")
     file(MAKE_DIRECTORY "${TARGET_EXT_INCLUDE_DIR}")
 endif()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES Emscripten)
-    set(LIBRARY_OUTPUT_PATH "${TARGET_LIB_DIR}")
-else()
-    set(SP _)
-    set(LIBRARY_OUTPUT_PATH "${TARGET_LIB_DIR}/${CMAKE_BUILD_TYPE}${SP}${CMAKE_SYSTEM_NAME}${SP}${CMAKE_SYSTEM_PROCESSOR}")
-endif()
+set(SP _)
+set(LIBRARY_OUTPUT_PATH "${TARGET_LIB_DIR}/${CMAKE_BUILD_TYPE}${SP}${CMAKE_SYSTEM_NAME}${SP}${CMAKE_SYSTEM_PROCESSOR}")
 
 set(GPCORE2 GpCore2)
 
