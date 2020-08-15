@@ -1,6 +1,4 @@
 cmake_minimum_required(VERSION 3.16)
-#include(ExternalProject)
-include(FetchContent)
 
 project(utf8proc
 	VERSION 0.1.0
@@ -16,6 +14,15 @@ set(SOURCES
         )
 
 option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" ON)
+option(BUILD_WASM32 "Build static wasm libraries" OFF)
+
+if (BUILD_WASM32)
+    set(BUILD_SHARED_LIBS OFF)
+    set(CMAKE_SYSTEM_NAME Emscripten)
+    set(CMAKE_SYSTEM_PROCESSOR wasm32)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 if (BUILD_SHARED_LIBS)
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
 else()
@@ -29,10 +36,9 @@ target_compile_definitions(${PROJECT_NAME}
             _GLIBCXX_USE_NANOSLEEP
 	)
 
-set(CMAKE_SYSTEM_NAME ${CMAKE_SYSTEM_NAME} CACHE STRING "Uno-labs-overridden CMAKE_SYSTEM_NAME")
-
 string(JOIN " " COMPILE_FLAGS
         -std=gnu++20
+        -O3
 
         -fvisibility=hidden
         -fvisibility-inlines-hidden
@@ -72,12 +78,12 @@ string(JOIN "," LINK_FLAGS
 
 #------------------------ OS ---------------------
 if(${CMAKE_SYSTEM_NAME} MATCHES Emscripten)
-    set(EMCMAKE_COMMAND             ${EMSCRIPTEN_ROOT_PATH}/emcmake)
-    set(CMAKE_TOOLCHAIN_FILE        ${EMSCRIPTEN_ROOT_PATH}/cmake/Modules/Platform/Emscripten.cmake)
-    set(CMAKE_CXX_COMPILER          ${EMSCRIPTEN_ROOT_PATH}/em++)
-    set(CMAKE_C_COMPILER            ${EMSCRIPTEN_ROOT_PATH}/emcc)
-    set(CMAKE_AR                    ${EMSCRIPTEN_ROOT_PATH}/emar)
-    set(CMAKE_RANLIB                ${EMSCRIPTEN_ROOT_PATH}/emranlib)
+    set(EMSCRIPTEN_ROOT             $ENV{EMSDK}/upstream/emscripten)
+    set(CMAKE_TOOLCHAIN_FILE        ${EMSCRIPTEN_ROOT}/cmake/Modules/Platform/Emscripten.cmake)
+    set(CMAKE_CXX_COMPILER          em++)
+    set(CMAKE_C_COMPILER            emcc)
+    set(CMAKE_AR                    emar)
+    set(CMAKE_RANLIB                emranlib)
     set(CMAKE_CXX_STANDARD          20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -85,6 +91,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES Emscripten)
     set(CMAKE_C_ARCHIVE_CREATE   "<CMAKE_AR> cqs <TARGET> <LINK_FLAGS> <OBJECTS>")
 
     string(JOIN " " COMPILE_FLAGS
+            ${COMPILE_FLAGS}
             -s ALLOW_MEMORY_GROWTH=1
           )
 elseif(${CMAKE_SYSTEM_NAME} MATCHES Linux)
@@ -103,7 +110,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS ${COMPILE_FLAGS})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${LINK_FLAGS})
 
 #------------------------ ARC ---------------------
-set(CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "Uno-labs-overridden CMAKE_SYSTEM_PROCESSOR")
 if (${CMAKE_SYSTEM_PROCESSOR} MATCHES x86_64)
     target_compile_options(${PROJECT_NAME} PRIVATE
         -mtune=generic
@@ -121,24 +127,12 @@ else()
     message(FATAL_ERROR "Unknown ARC. Set -DCMAKE_SYSTEM_PROCESSOR= ... one of values: x86_64, x86, wasm32, arm_v6, arm64_v8a")
 endif()
 
-#------------------------ DEBUG or RELEASE ---------------------
+#------------------------ RELEASE ---------------------
+set(CMAKE_BUILD_TYPE Release)
 string(TOUPPER ${CMAKE_BUILD_TYPE} MODE_BUILD)
 message(STATUS "[${PROJECT_NAME}]: ***************** Build mode ${MODE_BUILD} *****************")
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${MODE_BUILD}_BUILD)
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        -fsanitize=address
-        -fsanitize=undefined
-        -fno-sanitize=vptr
-        )
-    set(MODE_SUFFIX _d)
-    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}$<$<CONFIG:Debug>:${MODE_SUFFIX}>")
-    set(Boost_USE_DEBUG_LIBS ON)
-elseif(CMAKE_BUILD_TYPE MATCHES Release)
-    set(Boost_USE_RELEASE_LIBS ON)
-else()
-    message(FATAL_ERROR "Unknown build mode. Set -DCMAKE_BUILD_TYPE=Debug OR -DCMAKE_BUILD_TYPE=Release")
-endif()
+set(Boost_USE_RELEASE_LIBS ON)
 
 #------------------------ FILES LOCATIONS ---------------------
 set(CMAKE_INSTALL_PREFIX	"${CMAKE_SOURCE_DIR}/../.." CACHE PATH "..." FORCE)
@@ -150,22 +144,16 @@ if (NOT EXISTS "${TARGET_EXT_INCLUDE_DIR}")
     file(MAKE_DIRECTORY "${TARGET_EXT_INCLUDE_DIR}")
 endif()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES Emscripten)
-    set(DESTDIR "${TARGET_LIB_DIR}")
-else()
-    set(SP _)
-    set(DESTDIR "${TARGET_LIB_DIR}/${CMAKE_BUILD_TYPE}${SP}${CMAKE_SYSTEM_NAME}${SP}${CMAKE_SYSTEM_PROCESSOR}")
-endif()
-
-set(LIBRARY_OUTPUT_PATH	${DESTDIR})
+set(SP _)
+set(LIBRARY_OUTPUT_PATH "${TARGET_LIB_DIR}/${CMAKE_BUILD_TYPE}${SP}${CMAKE_SYSTEM_NAME}${SP}${CMAKE_SYSTEM_PROCESSOR}")
 
 set(GPCORE2 GpCore2)
 
 target_include_directories(${PROJECT_NAME}
         PRIVATE
             "${TARGET_EXT_INCLUDE_DIR}"
-            "${EXTRAS}/${GPCORE2}"
-            "${BOOST_INCLUDE}"
+            "${TARGET_EXT_INCLUDE_DIR}/${GPCORE2}"
+            "${Boost_INCLUDE_DIR}"
         )
 
 target_link_directories(${PROJECT_NAME}
@@ -177,14 +165,12 @@ target_link_libraries(${PROJECT_NAME}
         PRIVATE
             pthread
             ${GPCORE2}
-            $<$<CONFIG:Debug>:asan>
-            $<$<CONFIG:Debug>:ubsan>
 	)
 
 message(STATUS "[${PROJECT_NAME}]: Target name:              " ${PROJECT_NAME})
 message(STATUS "[${PROJECT_NAME}]: Target arch:              " ${CMAKE_SYSTEM_PROCESSOR})
 message(STATUS "[${PROJECT_NAME}]: Target OS:                " ${CMAKE_SYSTEM_NAME})
-message(STATUS "[${PROJECT_NAME}]: Build directory:          " ${DESTDIR})
+message(STATUS "[${PROJECT_NAME}]: Build directory:          " ${LIBRARY_OUTPUT_PATH})
 message(STATUS "[${PROJECT_NAME}]: C++ standart:             " ${CMAKE_CXX_STANDARD})
 message(STATUS "[${PROJECT_NAME}]: GCC C compiler version:   " ${CMAKE_C_COMPILER})
 message(STATUS "[${PROJECT_NAME}]: GCC C++ compiler version: " ${CMAKE_CXX_COMPILER})
