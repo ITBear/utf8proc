@@ -1,4 +1,6 @@
-static const utf8proc_uint16_t utf8proc_sequences[] = {
+#include "utf8proc_data.hpp"
+
+const utf8proc_uint16_t utf8proc_data::utf8proc_sequences[] = {
   97, 98, 99, 100, 101, 102, 103, 
   104, 105, 106, 107, 108, 109, 110, 111, 
   112, 113, 114, 115, 116, 117, 118, 119, 
@@ -1207,7 +1209,7 @@ static const utf8proc_uint16_t utf8proc_sequences[] = {
   56602, 55354, 56603, 55354, 56604, 55354, 56605, 55354, 
   56606, 55354, 56607, 55354, 56608, 55354, 56609, };
 
-static const utf8proc_uint16_t utf8proc_stage1table[] = {
+const utf8proc_uint16_t utf8proc_data::utf8proc_stage1table[] = {
   0, 256, 512, 768, 1024, 1280, 1536, 
   1792, 2048, 2304, 2560, 2816, 3072, 3328, 3584, 
   3840, 4096, 4352, 4608, 4864, 5120, 5376, 5632, 
@@ -1754,7 +1756,7 @@ static const utf8proc_uint16_t utf8proc_stage1table[] = {
   18432, 18432, 18432, 18432, 18432, 18432, 18432, 18432, 
   42496, };
 
-static const utf8proc_uint16_t utf8proc_stage2table[] = {
+const utf8proc_uint16_t utf8proc_data::utf8proc_stage2table[] = {
   1, 2, 2, 2, 2, 2, 2, 
   2, 2, 3, 4, 3, 5, 6, 2, 
   2, 2, 2, 2, 2, 2, 2, 2, 
@@ -7101,7 +7103,7 @@ static const utf8proc_uint16_t utf8proc_stage2table[] = {
   4092, 4092, 4092, 4092, 4092, 4092, 4092, 0, 
   0, };
 
-static const utf8proc_property_t utf8proc_properties[] = {
+const utf8proc_property_t utf8proc_data::utf8proc_properties[] = {
   {0, 0, 0, 0, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,  false,false,false,false, 1, 0, UTF8PROC_BOUNDCLASS_OTHER},
   {UTF8PROC_CATEGORY_CC, 0, UTF8PROC_BIDI_CLASS_BN, 0, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, false, true, false, true, 0, 0, UTF8PROC_BOUNDCLASS_CONTROL},
   {UTF8PROC_CATEGORY_CC, 0, UTF8PROC_BIDI_CLASS_BN, 0, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, false, false, false, true, 0, 0, UTF8PROC_BOUNDCLASS_CONTROL},
@@ -13961,7 +13963,7 @@ static const utf8proc_property_t utf8proc_properties[] = {
   {UTF8PROC_CATEGORY_LO, 0, UTF8PROC_BIDI_CLASS_L, 0, 8075, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, false, false, false, false, 2, 0, UTF8PROC_BOUNDCLASS_OTHER},
 };
 
-static const utf8proc_uint16_t utf8proc_combinations[] = {
+const utf8proc_uint16_t utf8proc_data::utf8proc_combinations[] = {
   0, 46, 192, 193, 194, 195, 196, 197, 0, 
   256, 258, 260, 550, 461, 0, 0, 512, 
   514, 0, 0, 0, 0, 0, 0, 0, 

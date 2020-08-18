@@ -40,8 +40,8 @@
  *  Implementation of libutf8proc.
  */
 
-
 #include "utf8proc_impl.hpp"
+#include "utf8proc_data.hpp"
 #include <string>
 
 #ifndef SSIZE_MAX
@@ -50,8 +50,6 @@
 #ifndef UINT16_MAX
 #  define UINT16_MAX 65535U
 #endif
-
-#include "utf8proc_data.cpp"
 
 const utf8proc_int8_t utf8proc_utf8class[256] = {
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -248,15 +246,15 @@ static utf8proc_ssize_t charbound_encode_char(utf8proc_int32_t uc, utf8proc_uint
 /* internal "unsafe" version that does not check whether uc is in range */
 static const utf8proc_property_t *unsafe_get_property(utf8proc_int32_t uc) {
   /* ASSERT: uc >= 0 && uc < 0x110000 */
-  return utf8proc_properties + (
-    utf8proc_stage2table[
-      utf8proc_stage1table[uc >> 8] + (uc & 0xFF)
+  return utf8proc_data::utf8proc_properties + (
+    utf8proc_data::utf8proc_stage2table[
+      utf8proc_data::utf8proc_stage1table[uc >> 8] + (uc & 0xFF)
     ]
   );
 }
 
  const utf8proc_property_t *utf8proc_get_property(utf8proc_int32_t uc) {
-  return uc < 0 || uc >= 0x110000 ? utf8proc_properties : unsafe_get_property(uc);
+  return uc < 0 || uc >= 0x110000 ? utf8proc_data::utf8proc_properties : unsafe_get_property(uc);
 }
 
 /* return whether there is a grapheme break between boundclasses lbc and tbc
@@ -359,13 +357,13 @@ static utf8proc_int32_t seqindex_decode_entry(const utf8proc_uint16_t **entry)
 
 static utf8proc_int32_t seqindex_decode_index(const utf8proc_uint32_t seqindex)
 {
-  const utf8proc_uint16_t *entry = &utf8proc_sequences[seqindex];
+  const utf8proc_uint16_t *entry = &utf8proc_data::utf8proc_sequences[seqindex];
   return seqindex_decode_entry(&entry);
 }
 
 static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqindex, utf8proc_int32_t *dst, utf8proc_ssize_t bufsize, utf8proc_option_t options, int *last_boundclass) {
   utf8proc_ssize_t written = 0;
-  const utf8proc_uint16_t *entry = &utf8proc_sequences[seqindex & 0x1FFF];
+  const utf8proc_uint16_t *entry = &utf8proc_data::utf8proc_sequences[seqindex & 0x1FFF];
   int len = seqindex >> 13;
   if (len >= 7) {
     len = *entry;
@@ -660,12 +658,12 @@ static utf8proc_ssize_t seqindex_write_char_decomposed(utf8proc_uint16_t seqinde
             current_property->comb_index >= 0x8000) {
           int sidx = starter_property->comb_index;
           int idx = current_property->comb_index & 0x3FFF;
-          if (idx >= utf8proc_combinations[sidx] && idx <= utf8proc_combinations[sidx + 1] ) {
-            idx += sidx + 2 - utf8proc_combinations[sidx];
+          if (idx >= utf8proc_data::utf8proc_combinations[sidx] && idx <= utf8proc_data::utf8proc_combinations[sidx + 1] ) {
+            idx += sidx + 2 - utf8proc_data::utf8proc_combinations[sidx];
             if (current_property->comb_index & 0x4000) {
-              composition = (utf8proc_combinations[idx] << 16) | utf8proc_combinations[idx+1];
+              composition = (utf8proc_data::utf8proc_combinations[idx] << 16) | utf8proc_data::utf8proc_combinations[idx+1];
             } else
-              composition = utf8proc_combinations[idx];
+              composition = utf8proc_data::utf8proc_combinations[idx];
 
             if (composition > 0 && (!(options & UTF8PROC_STABLE) ||
                 !(unsafe_get_property(composition)->comp_exclusion))) {
