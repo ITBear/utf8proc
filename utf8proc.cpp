@@ -37,7 +37,7 @@ size_byte_t UTF8Proc::S_Process (const UTF8NFType::EnumT    aType,
     const utf8proc_ssize_t countUTF32 = utf8proc_decompose_custom(reinterpret_cast<const utf8proc_uint8_t*>(aStrIn.data()),
                                                                   NumOps::SConvert<utf8proc_ssize_t>(aStrIn.size()),
                                                                   aStrOut.Ptr(),
-                                                                  maxCountUTF32.ValueAs<utf8proc_ssize_t>(),
+                                                                  maxCountUTF32.As<utf8proc_ssize_t>(),
                                                                   options,
                                                                   nullptr,
                                                                   nullptr);
@@ -55,7 +55,7 @@ size_byte_t UTF8Proc::S_Process (const UTF8NFType::EnumT    aType,
 
 size_t  UTF8Proc::STypeToFlags (const UTF8NFType::EnumT aType) noexcept
 {
-    static const GpArray<utf8proc_option_t, UTF8NFType::SCount().ValueAs<size_t>()> sFlags =
+    static const GpArray<utf8proc_option_t, UTF8NFType::SCount().As<size_t>()> sFlags =
     {
         utf8proc_option_t(UTF8PROC_STABLE | UTF8PROC_DECOMPOSE),//NFD
         utf8proc_option_t(UTF8PROC_STABLE | UTF8PROC_COMPOSE),//NFC
