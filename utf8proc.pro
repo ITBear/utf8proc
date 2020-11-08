@@ -7,9 +7,9 @@ QMAKE_CXXFLAGS += -DGP_MODULE_UUID=8325f263-d17a-4416-9522-9431fd85d202
 QMAKE_CXXFLAGS += -DGP_TYPE_SYSTEM_STATIC_ADD_TO_MANAGER
 DEFINES		   += UTF8PROC_LIBRARY
 PACKET_NAME     = utf8proc
-DIR_LEVEL       = .
+DIR_LEVEL       = ./..
 
-include(../QtGlobalPro.pri)
+include(../../QtGlobalPro.pri)
 
 #------------------------------ LIBS BEGIN ---------------------------------
 os_windows{
