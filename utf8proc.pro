@@ -1,27 +1,25 @@
+# ----------- Config -----------
 TEMPLATE        = lib
-#CONFIG         += staticlib
-VER_MAJ		    = 0
-VER_MIN		    = 1
-VER_PAT		    = 1
+#CONFIG        += staticlib
+QMAKE_CXXFLAGS += -DGP_REFLECTION_STATIC_ADD_TO_MANAGER
 QMAKE_CXXFLAGS += -DGP_MODULE_UUID=8325f263-d17a-4416-9522-9431fd85d202
-QMAKE_CXXFLAGS += -DGP_TYPE_SYSTEM_STATIC_ADD_TO_MANAGER
-DEFINES		   += UTF8PROC_LIBRARY
 PACKET_NAME     = utf8proc
+DEFINES        += UTF8PROC_LIBRARY
+_VER_MAJ        = 1
+_VER_MIN        = 2
+_VER_PAT        = 0
 DIR_LEVEL       = ./..
 
-include(../../QtGlobalPro.pri)
+include($$DIR_LEVEL/../QtGlobalPro.pri)
 
-#------------------------------ LIBS BEGIN ---------------------------------
+# ----------- Libraries -----------
 os_windows{
-	GP_CORE_LIB_V = 2
 }
 
 os_linux{
 }
 
-LIBS += -lGpCore2$$TARGET_POSTFIX$$GP_CORE_LIB_V
-#------------------------------ LIBS END ---------------------------------
-
+# ----------- Sources and headers -----------
 SOURCES += \
 	utf8proc.cpp \
 	utf8proc_data.cpp \
