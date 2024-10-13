@@ -1,6 +1,5 @@
 # ----------- Config -----------
 TEMPLATE        = lib
-#CONFIG        += staticlib
 QMAKE_CXXFLAGS += -DGP_REFLECTION_STATIC_ADD_TO_MANAGER
 QMAKE_CXXFLAGS += -DGP_MODULE_UUID=8325f263-d17a-4416-9522-9431fd85d202
 PACKET_NAME     = utf8proc
@@ -12,11 +11,17 @@ DIR_LEVEL       = ./..
 
 include($$DIR_LEVEL/../QtGlobalPro.pri)
 
-# ----------- Libraries -----------
-os_windows{
+equals(var_link, "static") {
+	CONFIG += staticlib
 }
 
-os_linux{
+# ----------- Libraries -----------
+equals(var_os, "windows") {
+	LIBS += -lGpUtils$$TARGET_POSTFIX
+}
+
+equals(var_os, "linux") {
+	LIBS += -lGpUtils$$TARGET_POSTFIX
 }
 
 # ----------- Sources and headers -----------

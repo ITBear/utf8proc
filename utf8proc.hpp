@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utf8proc_global.hpp"
+#include <utf8proc/utf8proc_global.hpp>
 
 #include <GpCore2/GpUtils/Types/Enums/GpEnum.hpp>
 #include <GpCore2/GpUtils/Types/Strings/GpStringOps.hpp>

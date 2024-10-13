@@ -1,5 +1,5 @@
-#include "utf8proc.hpp"
-#include "utf8proc_impl.hpp"
+#include <utf8proc/utf8proc.hpp>
+#include <utf8proc/utf8proc_impl.hpp>
 
 namespace GPlatform {
 

@@ -42,7 +42,7 @@
 
 #include "utf8proc_impl.hpp"
 #include "utf8proc_data.hpp"
-#include <string>
+#include <cstdlib>
 
 #ifndef SSIZE_MAX
 #define SSIZE_MAX ((size_t)SIZE_MAX/2)
